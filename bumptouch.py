@@ -1,5 +1,6 @@
 from mistyPy.Robot import Robot #libraries
 from mistyPy.Events import Events
+import time
 
 misty = Robot("10.1.14.125")
 
@@ -27,8 +28,22 @@ def touched(data):
     misty.move_arms(-40, 90, 50, 50)
     misty.change_led(0, 255, 0)
     message = data["message"]
-    if message.get("isContacted") is True:
-        misty.speak("Don't touch my head!")
+
+    msg = data["message"]
+    position = msg.get("sensorPosition", "")
+
+    if position == "HeadLeft" and msg.get("isContacted", True):
+        misty.change_led(255, 0, 0)
+        misty.move_head(-20, 0, 90, 90)
+        misty.speak("Hello there", voice="English 12 (India)")
+        print("✅ HeadLeft touched")
+
+    time.sleep(2)
+
+    misty.move_head(0, 0, 0, 90)
+
+
+
 
 
 #events definitions
