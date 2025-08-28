@@ -1,9 +1,17 @@
+import os
+from dotenv import load_dotenv
 from mistyPy.Robot import Robot
 from mistyPy.Events import Events
 import time
+# Load .env file
+load_dotenv()
 
-MISTY_IP = "10.1.14.125"
+# Get Misty IP from environment
+MISTY_IP = os.getenv("MISTY_IP")
+
+# Connect to Misty
 misty = Robot(MISTY_IP)
+
 
 # Start recognition service
 misty.start_face_recognition()

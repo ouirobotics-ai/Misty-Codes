@@ -1,11 +1,18 @@
+import os
+from dotenv import load_dotenv
 import speech_recognition as sr
 from mistyPy.Robot import Robot
 import time
+# Load .env file
+load_dotenv()
 
-MISTY_IP = "10.1.14.125"
-DEVICE_INDEX = 9
+# Get Misty IP from environment
+MISTY_IP = os.getenv("MISTY_IP")
 
+# Connect to Misty
 misty = Robot(MISTY_IP)
+
+DEVICE_INDEX = 9
 
 recognizer = sr.Recognizer()
 mic = sr.Microphone(device_index=DEVICE_INDEX)

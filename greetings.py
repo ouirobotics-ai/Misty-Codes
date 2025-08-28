@@ -1,10 +1,19 @@
+import os
+from dotenv import load_dotenv
 from mistyPy.Robot import Robot
 from mistyPy.Events import Events
 import time
 import random
 
-MISTY_IP = "10.1.14.125"
+# Load .env file
+load_dotenv()
+
+# Get Misty IP from environment
+MISTY_IP = os.getenv("MISTY_IP")
+
+# Connect to Misty
 misty = Robot(MISTY_IP)
+
 
 greetings = [
     "Hello! Nice to see you.",

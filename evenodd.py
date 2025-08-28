@@ -1,6 +1,16 @@
+import os
+from dotenv import load_dotenv
 from mistyPy.Robot import Robot
 
-misty = Robot("10.1.14.125")
+# Load .env file
+load_dotenv()
+
+# Get Misty IP from environment
+MISTY_IP = os.getenv("MISTY_IP")
+
+# Connect to Misty
+misty = Robot(MISTY_IP)
+
 
 misty.speak("Hello, I am Misty. Today I will tell you whether a number is even or not?")
 
