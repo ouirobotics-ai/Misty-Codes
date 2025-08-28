@@ -1,21 +1,35 @@
-import speech_recognition as sr
+import pygame
+import sys
+import time
 
-r = sr.Recognizer()
-mic = sr.Microphone(device_index=1)  # your Airdopes Alpha mic index
+pygame.init()
+pygame.joystick.init()
 
-print("🎤 Say something...")
+if pygame.joystick.get_count() == 0:
+    print("No controller detected!")
+    sys.exit()
 
-with mic as source:
-    r.adjust_for_ambient_noise(source, duration=1)
-    print("Listening now...")
-    audio = r.listen(source)
+joystick = pygame.joystick.Joystick(0)
+joystick.init()
+print(f"Controller detected: {joystick.get_name()}")
 
-print("Got audio!")
+while True:
+    pygame.event.pump()
 
-try:
-    text = r.recognize_google(audio)
-    print("You said:", text)
-except sr.UnknownValueError:
-    print("❌ Could not understand audio")
-except sr.RequestError as e:
-    print("⚠️ API error:", e)
+    # Axes
+    axes = [round(joystick.get_axis(i), 2) for i in range(joystick.get_numaxes())]
+    if any(abs(a) > 0.1 for a in axes):  # deadzone filter
+        print(f"Axes: {axes}")
+
+    # Buttons
+    buttons = [joystick.get_button(i) for i in range(joystick.get_numbuttons())]
+    for i, pressed in enumerate(buttons):
+        if pressed:
+            print(f"Button {i} pressed")
+
+    # Hats (D-pad on many controllers)
+    hats = [joystick.get_hat(i) for i in range(joystick.get_numhats())]
+    if any(h != (0, 0) for h in hats):
+        print(f"Hats: {hats}")
+
+    time.sleep(0.1)
