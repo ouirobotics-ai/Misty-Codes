@@ -11,7 +11,6 @@ MISTY_IP = os.getenv("MISTY_IP")
 # Connect to Misty
 misty = Robot(MISTY_IP)
 
-
 misty.speak("Hello, I am Misty. Today I will tell you whether a number is even or not?")
 
 num = int(input("Enter a number: "))
