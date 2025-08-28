@@ -77,7 +77,8 @@ while True:
     else:
         # --- Right Stick (exact position mapping) ---
         rx = clamp_axis(joystick.get_axis(2))   # yaw
-        ry = clamp_axis(joystick.get_axis(3))   # pitch
+        ry = clamp_axis(joystick.get_axis(3))   # pitch dh
+        
         
         # Check if joystick position has changed significantly
         if abs(rx - prev_rx) > 0.1 or abs(ry - prev_ry) > 0.1:
