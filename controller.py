@@ -52,9 +52,9 @@ def on_face(data):
     else:
         print(f"Skipping {label}, still on cooldown.")
 
-# Track previous joystick position and last commanded angles
-prev_rx = 0.0
-prev_ry = 0.0
+# Track previous joystick positions and last commanded angles
+prev_lx, prev_ly = 0.0, 0.0
+prev_rx, prev_ry = 0.0, 0.0
 last_commanded_yaw = 0
 last_commanded_pitch = 0
 
@@ -64,28 +64,46 @@ face_recognition_active = False
 while True:
     pygame.event.pump()
 
-    # --- R3 Button (11) → Stop Head Movement ---
+    # --- R3 Button (9) → Stop All Movement ---
     if joystick.get_button(9):
+        # Stop drive movement
+        misty.stop()
         # Send a command to stop the head at its last commanded position
         misty.move_head(last_commanded_pitch, 0, last_commanded_yaw, velocity=0)
-        print("R3 pressed, stopping head movement.")
+        print("R3 pressed, stopping all movement.")
         # Ensure we don't accidentally send a new command after
-        prev_rx = 0.0
-        prev_ry = 0.0
+        prev_lx, prev_ly = 0.0, 0.0
+        prev_rx, prev_ry = 0.0, 0.0
     
     # --- Otherwise, continue with normal control logic ---
     else:
-        # --- Right Stick (exact position mapping) ---
-        rx = clamp_axis(joystick.get_axis(2))   # yaw
-        ry = clamp_axis(joystick.get_axis(3))   # pitch dh
+        # Get left stick values for drive movement
+        lx = clamp_axis(joystick.get_axis(0))
+        ly = clamp_axis(joystick.get_axis(1))
+        # Get right stick values for pitch and yaw
+        rx = clamp_axis(joystick.get_axis(2))
+        ry = clamp_axis(joystick.get_axis(3))
         
+        # --- Drive Movement with Left Stick ---
+        if abs(lx - prev_lx) > 0.1 or abs(ly - prev_ly) > 0.1:
+            # Map stick positions to drive velocities
+            target_linear = int(-ly * 100)
+            target_angular = int(-lx * 100)
+
+            # Send the drive command
+            misty.drive(target_linear, target_angular)
+            print(f"[Drive control] linear={target_linear}, angular={target_angular}")
+
+            # Update previous joystick position
+            prev_lx = lx
+            prev_ly = ly
         
-        # Check if joystick position has changed significantly
+        # --- Head Movement with Right Stick ---
         if abs(rx - prev_rx) > 0.1 or abs(ry - prev_ry) > 0.1:
             
-            # Map stick position to target head angles
-            target_yaw = int(rx * 81)       # left/right
-            target_pitch = int(ry * 40)     # up/down
+            # Map stick positions to target head angles
+            target_yaw = int(rx * 81)           # left/right yaw
+            target_pitch = int(ry * 40)         # up/down pitch
 
             # Clamp to Misty’s ranges
             target_yaw = max(-81, min(81, target_yaw))
@@ -93,7 +111,7 @@ while True:
 
             # Send the command to move to the exact position
             misty.move_head(int(target_pitch), 0, int(target_yaw), velocity=50)
-            print(f"[Head control] yaw={int(target_yaw)}, pitch={int(target_pitch)}")
+            print(f"[Head control] pitch={int(target_pitch)}, yaw={int(target_yaw)}")
 
             # Update previous joystick position and last commanded angles
             prev_rx = rx
