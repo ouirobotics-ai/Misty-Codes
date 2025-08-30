@@ -3,6 +3,7 @@ import sys
 import time
 import os
 import subprocess
+import random
 from mistyPy.Events import Events
 from dotenv import load_dotenv
 from mistyPy.Robot import Robot
@@ -57,20 +58,49 @@ prev_lx, prev_ly = 0.0, 0.0
 prev_rx, prev_ry = 0.0, 0.0
 last_commanded_yaw = 0
 last_commanded_pitch = 0
+is_driving = False
+face_recognition_active = False 
 
-# Keep track of recognition state
-face_recognition_active = False
+# New cooldown for button 3
+last_button_3_press = 0
+BUTTON_COOLDOWN = 3
+
+# List of phrases for button 3
+excuse_me_phrases = [
+    "Excuse me.",
+    "Side please.",
+    "Bumping into you is bad for my circuits.",
+    "Incoming robot, please make way.",
+    "Pardon me, my sensors detect an obstacle.",
+    "I'm on a mission, so move along.",
+    "Please clear the path for the ultimate robot overlord.",
+]
 
 while True:
     pygame.event.pump()
+    now = time.time()
 
-    # --- R3 Button (9) → Stop All Movement ---
-    if joystick.get_button(9):
+    # --- Button 2 (2) → "Excuse Me" Action ---
+    if joystick.get_button(2) and now - last_button_3_press > BUTTON_COOLDOWN:
+        print("Button 2 pressed → Excuse me action")
+        phrase_to_say = random.choice(excuse_me_phrases)
+        misty.display_image("e_Disgust.jpg")
+        misty.speak(phrase_to_say, 1)
+        misty.move_arms(-90, -90, 50, 50)
+        time.sleep(1)
+        misty.move_arms(0, 0, 50, 50)
+        last_button_3_press = now
+
+    # --- R3 Button (4) → Stop All Movement ---
+    if joystick.get_button(4):
         # Stop drive movement
         misty.stop()
+        misty.display_image("e_DefaultContent.jpg")
+        misty.move_arms(90, 90, 50, 50)
         # Send a command to stop the head at its last commanded position
         misty.move_head(last_commanded_pitch, 0, last_commanded_yaw, velocity=0)
         print("R3 pressed, stopping all movement.")
+        is_driving = False # Reset the state
         # Ensure we don't accidentally send a new command after
         prev_lx, prev_ly = 0.0, 0.0
         prev_rx, prev_ry = 0.0, 0.0
@@ -84,21 +114,26 @@ while True:
         rx = clamp_axis(joystick.get_axis(2))
         ry = clamp_axis(joystick.get_axis(3))
         
-        # --- Drive Movement with Left Stick ---
-        if (abs(lx - prev_lx) > 0.1 or abs(ly - prev_ly) > 0.1) and (lx != 0.0 or ly != 0.0):
-            # Map stick positions to drive velocities
+        # --- Drive Movement with Left Stick (2-Axis) ---
+        if ly != 0.0:
+            # Control linear velocity (forward/backward)
             target_linear = int(-ly * 100)
+            misty.drive(target_linear, 0)
+            print(f"[Drive control] linear={target_linear}, angular=0")
+            is_driving = True
+        elif lx != 0.0:
+            # Control angular velocity (turning in place)
             target_angular = int(-lx * 100)
+            misty.drive(0, target_angular)
+            print(f"[Drive control] linear=0, angular={target_angular}")
+            is_driving = True
+        elif is_driving:
+            # Joystick is centered and Misty was driving, so send a single stop command
+            misty.stop()
+            print("[Drive control] Joystick released, stopping.")
+            is_driving = False
 
-            # Send the drive command
-            misty.drive(target_linear, target_angular)
-            print(f"[Drive control] linear={target_linear}, angular={target_angular}")
-
-            # Update previous joystick position
-            prev_lx = lx
-            prev_ly = ly
-        
-        # --- Head Movement with Right Stick ---
+        # --- Head Movement with Right Stick (Jitter-Free) ---
         if abs(rx - prev_rx) > 0.1 or abs(ry - prev_ry) > 0.1:
             
             # Map stick positions to target head angles
