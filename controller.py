@@ -85,7 +85,7 @@ while True:
         ry = clamp_axis(joystick.get_axis(3))
         
         # --- Drive Movement with Left Stick ---
-        if abs(lx - prev_lx) > 0.1 or abs(ly - prev_ly) > 0.1:
+        if (abs(lx - prev_lx) > 0.1 or abs(ly - prev_ly) > 0.1) and (lx != 0.0 or ly != 0.0):
             # Map stick positions to drive velocities
             target_linear = int(-ly * 100)
             target_angular = int(-lx * 100)
